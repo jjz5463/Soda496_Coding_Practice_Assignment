@@ -1,0 +1,117 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r}
+library(countrycode)
+library(stargazer)
+library(httr)
+```
+
+# Data
+
+* I find a happiness index data from https://www.kaggle.com/datasets/unsdsn/world-happiness?select=2019.csv
+* I am also going to use the World Bank from class
+
+```{r}
+# data loading
+happy19 <- read.csv("data/2019.csv")
+wb <- read.csv("data/WB_Emissions.csv")
+```
+
+# Data Cleaning
+
+## world bank data
+
+* The objective here is cleaning the world bank data. Some of the process are same as the class lecture, but I filter the data to only 2019 because the happiness data is from 2019.
+
+```{r}
+# change variable names of world bank data
+colnames(wb)[5] = "NO2"
+colnames(wb)[6] = "CO2"
+colnames(wb)[7] = "CH4"
+```
+
+```{r}
+# we only need the 2019 data from world bank 
+# because I only have 2019 happiness index
+wb = wb[which(wb$Time == 2019),]
+```
+
+```{r}
+# change variables to numerical in world bank data
+wb[c("CO2", "NO2", "CH4")] = lapply(wb[c("CO2", "NO2", "CH4")], as.numeric)
+
+# only select the columns I want from world bank
+wb = wb[c("Country.Code", "CO2", "NO2", "CH4")] 
+```
+
+```{r}
+# delete na observations
+wb = na.omit(wb) 
+```
+
+## happiness data
+
+```{r}
+# deselect unwanted columns
+happy19 = happy19[,-c(1)]
+```
+
+```{r}
+# create a country code for happiness data
+happy19$Country.code = countrycode(happy19$Country.or.region, "country.name", "iso3c")
+```
+
+# Merge the data
+
+* merge by country code
+
+```{r}
+# merge the data set
+df = merge(happy19,wb, by.x = "Country.code", by.y = "Country.Code")
+```
+
+* check which countries did not get a match from happiness data 
+
+```{r}
+# check which country did not get a match
+setdiff(happy19$Country.or.region, df$Country.or.region)
+```
+
+* after manual investigation. the above four regions are not in world data data set.
+
+# running a simple regression
+
+## first make some EDA plots
+
+```{r}
+#Scatter plot
+plot(df$NO2,df$Score)
+plot(df$CO2,df$Score)
+plot(df$CH4,df$Score)
+```
+
+* looks like there is no relationship between emission and happiness score
+
+## run the regression
+
+```{r}
+#Regression model
+m1 = lm(Score~CO2, data = df)
+summary(m1)
+m2 = lm(Score~NO2, data = df)
+summary(m2)
+m3 = lm(Score~CH4, data = df)
+summary(m3)
+```
+
+* All three emmision levels has no relationship with happiness
+
+## output result by stargazer
+```{r}
+#Output Regression
+stargazer(m1,m2,m3, type = "html", out = "model.html")
+BROWSE("model.html")
+```
+
