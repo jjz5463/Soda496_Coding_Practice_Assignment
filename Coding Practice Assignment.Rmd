@@ -54,8 +54,20 @@ wb = na.omit(wb)
 ## happiness data
 
 ```{r}
-# deselect unwanted columns
+# Renaming long or confusing columns
+colnames(happy19)[6] = "life"
+colnames(happy19)[7] = "freedom"
+colnames(happy19)[9] = "corruption"
+```
+
+```{r}
+# Getting rid of unnecessary columns
 happy19 = happy19[,-c(1)]
+```
+
+```{r}
+# Dealing with missing data
+happy19 = na.omit(happy19) 
 ```
 
 ```{r}
